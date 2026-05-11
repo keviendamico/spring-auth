@@ -1,16 +1,22 @@
 services:
   mysql:
     container_name: 'spring-auth-db'
-    image: 'mysql:latest'
+    image: 'mysql:8.4'
     environment:
-      - 'MYSQL_DATABASE=mydatabase'
-      - 'MYSQL_PASSWORD=secret'
-      - 'MYSQL_ROOT_PASSWORD=verysecret'
-      - 'MYSQL_USER=myuser'
+      - 'MYSQL_DATABASE=${DB_NAME:-mydatabase}'
+      - 'MYSQL_PASSWORD=${DB_PASSWORD:-secret}'
+      - 'MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD:-verysecret}'
+      - 'MYSQL_USER=${DB_USER:-myuser}'
     ports:
       - '3306:3306'
+    volumes:
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      - mysql_data:/var/lib/mysql
   redis:
     container_name: 'spring-auth-redis'
-    image: redis
+    image: 'redis:7'
     ports:
       - "7001:6379"
+
+volumes:
+  mysql_data:

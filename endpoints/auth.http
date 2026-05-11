@@ -1,36 +1,27 @@
 ## AUTH
-### CREATE USER
-POST http://localhost:8080/api/v1/auth/register
-Content-Type: application/json
-
-{
-  "id": 1,
-  "name": "John",
-  "surname": "Doe",
-  "email": "john.doe@example.com",
-  "address": "123 Main Street",
-  "phoneNumber": "123-456-7890",
-  "username": "johndoe",
-  "password": "password123",
-  "isVerified": true,
-  "isActive": true
-}
 
 ### LOGIN
 POST http://localhost:8080/api/v1/auth/login
 Content-Type: application/json
 
 {
-  "username" : "johndoe",
-  "password" : "password123"
+  "username": "johndoe",
+  "password": "password123"
 }
 
-### LOGOUT
-PUT http://localhost:8080/api/v1/auth/logout
+### REFRESH
+POST http://localhost:8080/api/v1/auth/refresh
 Content-Type: application/json
 
 {
-  "jwt": "eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWF0IjoxNzA5MTQzMDQzLCJleHAiOjE3MDkxNjEwNDN9.L78BmTMyKzVrvR2_0XpT0NeyqhHyCHjlsEloqIKwGKmVbwW4GA70BcH10vA3LnU4",
-  "refreshToken": "eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWF0IjoxNzA5MTQzMDQzLCJleHAiOjE3MTE3MzUwNDN9.WcKVJ01VVESc2A2OzT-pCBeGoG-NpglAGIHoMj6tnFqAvGn6O3J1KqRJu1GATLLE"
+  "refreshToken": "{{refreshToken}}"
+}
 
+### LOGOUT
+POST http://localhost:8080/api/v1/auth/logout
+Content-Type: application/json
+
+{
+  "jwt": "{{jwt}}",
+  "refreshToken": "{{refreshToken}}"
 }

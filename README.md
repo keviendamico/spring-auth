@@ -1,28 +1,81 @@
-# Spring 3.2.3: Auth
+# Spring Auth
 
-### Before start
+JWT authentication service built with Spring Boot 4, MySQL, and Redis.
 
-- Run `docker-compose up`
-- Log in MySQL DB 
-- Run query in `db/schema.sql`
+**Features:** register, login, token refresh (with rotation), logout (blacklist via Redis), protected endpoints.
 
-### Testing Auth
+---
 
-- Run AuthApplication
-- Go to `endpoints/auth.http`
-- Run **CREATE USER**
-- Run **LOGIN**
-- Copy _jwt_ and _refreshToken_ values
-- Past _jwt_ and _refreshToken_ values inside `endpoints/http-client.env.json`
-- Run **TEST** in `endpoints/test.http`
+## Setup
 
-Expected: *Hello! You're authorized!*
+### 1. Environment variables
 
-### Testing Logout
-- Go to `endpoints/auth.http`
-- Copy _jwt_ and _refreshToken_ values
-- Past _jwt_ and _refreshToken_ values inside body
-- Run **LOGOUT**
-- Run **TEST** in `endpoints/test.http`
+```bash
+export JWT_SECRET=<your-256-bit-base64-encoded-secret>
+```
 
-Expected: 401
+To generate a secure secret:
+```bash
+openssl rand -base64 32
+```
+
+Optionally override the Docker database credentials:
+```bash
+export DB_NAME=mydatabase
+export DB_PASSWORD=secret
+export DB_ROOT_PASSWORD=verysecret
+export DB_USER=myuser
+```
+
+### 2. Start infrastructure
+
+```bash
+docker-compose up -d
+```
+
+MySQL runs the schema from `db/schema.sql` automatically on first start.
+
+### 3. Run the application
+
+```bash
+./mvnw spring-boot:run
+```
+
+---
+
+## API
+
+### Auth — `/api/v1/auth` (public)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/auth/login` | Login, returns access + refresh token |
+| POST | `/api/v1/auth/refresh` | Exchange refresh token for a new token pair |
+| POST | `/api/v1/auth/logout` | Revoke access + refresh token |
+
+### Users — `/api/v1/users`
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/api/v1/users` | — | Register a new user |
+| GET | `/api/v1/users/me` | Bearer | Get current authenticated user |
+
+---
+
+## Testing
+
+Open `endpoints/user.http` and run **CREATE USER**, then open `endpoints/auth.http` and run the requests in order:
+
+1. **LOGIN** — returns `jwt` and `refreshToken`
+2. Copy both values into `endpoints/http-client.env.json`
+3. Open `endpoints/user.http` and run **ME** → returns the user profile
+
+### Testing logout
+
+1. Run **LOGOUT** in `endpoints/auth.http`
+2. Run **ME** again → expected: `401 Unauthorized`
+
+### Testing refresh
+
+1. Run **REFRESH** with a valid `refreshToken`
+2. Refresh tokens are rotated on use — the old one is immediately revoked

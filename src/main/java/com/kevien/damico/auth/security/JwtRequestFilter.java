@@ -31,33 +31,33 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         this.blackListService = blackListService;
     }
 
-
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
         String token = getJWTFromRequest(request);
-        String blackListedToken = blackListService.getJwtBlackList(token);
-        if (blackListedToken != null) {
-            log.error("JwtRequestFilter: Token is blacklisted");
-            response.sendError(401);
+
+        if (token != null && blackListService.isBlacklisted(token)) {
+            log.warn("Rejected blacklisted token");
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token has been revoked");
+            return;
         }
-        if(token != null && jwtTokenUtil.validateToken(token)) {
+
+        if (token != null && jwtTokenUtil.validateToken(token)) {
             String username = jwtTokenUtil.getUsernameFromToken(token);
             UserDetails userDetails = service.loadUserByUsername(username);
-            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userDetails,
-                    null, userDetails.getAuthorities());
-
+            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+                    userDetails, null, userDetails.getAuthorities());
             authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authenticationToken);
         }
+
         chain.doFilter(request, response);
     }
 
     private String getJWTFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
-        if(bearerToken!=null &&  bearerToken.startsWith("Bearer ")) {
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);
-        } else {
-            return null;
         }
+        return null;
     }
 }

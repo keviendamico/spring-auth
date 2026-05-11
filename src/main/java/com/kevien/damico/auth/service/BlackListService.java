@@ -1,22 +1,35 @@
 package com.kevien.damico.auth.service;
 
-import com.kevien.damico.auth.config.CacheConfig;
-
-import org.springframework.cache.annotation.CachePut;
-import org.springframework.cache.annotation.Cacheable;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+
+import java.time.Duration;
 
 @Service
 public class BlackListService {
 
-    @CachePut(CacheConfig.BLACKLIST_CACHE_NAME)
-    public String blackListJwt(String jwt) {
-        return jwt;
+    private final StringRedisTemplate redisTemplate;
+    private final Duration accessTokenTtl;
+    private final Duration refreshTokenTtl;
+
+    public BlackListService(StringRedisTemplate redisTemplate,
+                            @Value("${jwt.accessExpirationMs}") long accessExpirationMs,
+                            @Value("${jwt.refreshExpirationMs}") long refreshExpirationMs) {
+        this.redisTemplate = redisTemplate;
+        this.accessTokenTtl = Duration.ofMillis(accessExpirationMs);
+        this.refreshTokenTtl = Duration.ofMillis(refreshExpirationMs);
     }
 
-    @Cacheable(value = CacheConfig.BLACKLIST_CACHE_NAME, unless = "#result == null")
-    public String getJwtBlackList(String jwt) {
-        return null;
+    public void blackListAccessToken(String jwt) {
+        redisTemplate.opsForValue().set(jwt, "1", accessTokenTtl);
     }
 
+    public void blackListRefreshToken(String jwt) {
+        redisTemplate.opsForValue().set(jwt, "1", refreshTokenTtl);
+    }
+
+    public boolean isBlacklisted(String jwt) {
+        return Boolean.TRUE.equals(redisTemplate.hasKey(jwt));
+    }
 }
